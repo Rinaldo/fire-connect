@@ -1,0 +1,10 @@
+{
+	"root": true,
+	"parser": "babel-eslint",
+	"extends": "fullstack",
+	"rules": {
+		"quotes": 0,
+		"react/no-multi-comp": 0,
+		"react/prefer-stateless-function": 0
+	}
+}
