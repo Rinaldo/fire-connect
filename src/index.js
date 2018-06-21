@@ -2,6 +2,9 @@ import React from 'react'
 
 const fireContext = React.createContext()
 
+const addListenersErrorMessage = 'return value of addListeners must be either a function (for one listener) or object (for multiple listeners)'
+const multiListenerErrorMessage = 'The value of each key in the object returned from addListeners must be a function which takes no arguments and returns a listener'
+
 
 class Provider extends React.Component {
   constructor(props) {
@@ -36,7 +39,7 @@ class Provider extends React.Component {
 }
 
 
-const baseStoreContextConnector = Connector =>
+const contextConnector = Connector =>
   (listeners, dispatchers) =>
     ConnectedComponent =>
       class WithContext extends React.Component {
@@ -48,26 +51,6 @@ const baseStoreContextConnector = Connector =>
                   {...context}
                   listeners={listeners}
                   dispatchers={dispatchers}
-                  {...this.props}
-                  __render={stuff => <ConnectedComponent {...stuff} />}
-                />
-              )}
-            </fireContext.Consumer>
-          )
-        }
-      }
-// same as above except only takes a dispatchers argument instead of both listeners and dispatchers
-const authContextConnector = Connector =>
-  (authDispatchers) =>
-    ConnectedComponent =>
-      class WithContext extends React.Component {
-        render() {
-          return (
-            <fireContext.Consumer>
-              {context => (
-                <Connector
-                  {...context}
-                  authDispatchers={authDispatchers}
                   {...this.props}
                   __render={stuff => <ConnectedComponent {...stuff} />}
                 />
@@ -109,15 +92,23 @@ class FirebaseConnect extends React.Component {
       if (typeof listenerResult === 'function') {
         this.callbacks.push(listenerResult)
         if (!this.eventTypes.length) this.eventTypes.push(null)
-      } else if (listenerResult && typeof listenerResult === 'object') {
+      } else if (typeof listenerResult === 'object' && listenerResult !== null) {
         Object.values(listenerResult).forEach((listener, index) => {
-          this.callbacks.push(listener())
+          let callback
+          try {
+            callback = listener()
+          } catch (err) {
+            if (err.name === 'TypeError') err.message += '\n' + multiListenerErrorMessage
+            throw err
+          }
+          if (typeof callback !== 'function') throw new TypeError(multiListenerErrorMessage)
+          this.callbacks.push(callback)
           if (this.eventTypes.length <= index) {
             this.eventTypes.push(null)
           }
         })
       } else {
-        throw new TypeError('return value of addListeners must be either a function (for one listener) or object (for multiple listeners)')
+        throw new TypeError(addListenersErrorMessage)
       }
     }
   }
@@ -154,12 +145,20 @@ class FirestoreConnect extends React.Component {
       const listenerResult = this.props.listeners(this, this.props.firestore, this.props.user)
       if (typeof listenerResult === 'function') {
         this.unsubscribers = [listenerResult]
-      } else if (listenerResult && typeof listenerResult === 'object') {
+      } else if (typeof listenerResult === 'object' && listenerResult !== null) {
         Object.values(listenerResult).forEach(listener => {
+          let unsubscriber
+          try {
+            unsubscriber = listener()
+          } catch (err) {
+            if (err.name === 'TypeError') err.message += '\n' + multiListenerErrorMessage
+            throw err
+          }
+          if (typeof unsubscriber !== 'function') throw new TypeError(multiListenerErrorMessage)
           this.unsubscribers.push(listener())
         })
       } else {
-        throw new TypeError('return value of addListeners must be either a function (for one listener) or object (for multiple listeners)')
+        throw new TypeError(addListenersErrorMessage)
       }
     }
   }
@@ -183,16 +182,15 @@ class FirestoreConnect extends React.Component {
 class AuthConnect extends React.Component {
   constructor(props) {
     super(props)
-    this.state = {}
-    this.authDispatchers = typeof this.props.authDispatchers === 'function'
-      ? this.props.authDispatchers(this, this.props.auth, this.props.user)
+    this.dispatchers = typeof this.props.dispatchers === 'function'
+      ? this.props.dispatchers(this, this.props.auth, this.props.user)
       : {}
     this.unsubscribers = []
   }
   render() {
     return (
         <>
-          {this.props.__render({ ...this.authDispatchers, ...this.props, ...this.state })}
+          {this.props.__render({ ...this.dispatchers, ...this.props })}
         </>
     )
   }
@@ -200,6 +198,6 @@ class AuthConnect extends React.Component {
 
 
 export { Provider }
-export const firebaseConnect = baseStoreContextConnector(FirebaseConnect)
-export const firestoreConnect = baseStoreContextConnector(FirestoreConnect)
-export const authConnect = authContextConnector(AuthConnect)
+export const firebaseConnect = contextConnector(FirebaseConnect)
+export const firestoreConnect = contextConnector(FirestoreConnect)
+export const authConnect = contextConnector(AuthConnect).bind(null, null)
