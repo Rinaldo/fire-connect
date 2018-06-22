@@ -155,7 +155,7 @@ class FirestoreConnect extends React.Component {
             throw err
           }
           if (typeof unsubscriber !== 'function') throw new TypeError(multiListenerErrorMessage)
-          this.unsubscribers.push(listener())
+          this.unsubscribers.push(unsubscriber)
         })
       } else {
         throw new TypeError(addListenersErrorMessage)

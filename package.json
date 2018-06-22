@@ -1,7 +1,7 @@
 {
   "name": "fire-connect",
   "version": "1.0.0",
-  "description": "Firebase bindings for React inspired by React Redux",
+  "description": "React bindings for Firebase and Firestore",
   "main": "src/index.js",
   "devDependencies": {
     "@babel/core": "^7.0.0-beta.51",
@@ -12,11 +12,12 @@
     "babel-loader": "^8.0.0-beta",
     "enzyme": "^3.3.0",
     "enzyme-adapter-react-16": "^1.1.1",
+    "husky": "^1.0.0-rc.9",
     "jest": "^23.1.0",
     "path": "^0.12.7",
-    "react": "^16.4.1",
-    "react-dom": "^16.4.1",
-    "react-test-renderer": "^16.4.1",
+    "react": "^16.3.0",
+    "react-dom": "^16.3.0",
+    "react-test-renderer": "^16.3.0",
     "react-testing-library": "^3.1.7",
     "regenerator-runtime": "^0.11.1",
     "uglifyjs-webpack-plugin": "^1.2.5",
@@ -25,12 +26,18 @@
   },
   "peerDependencies": {
     "react": "^16.3.0",
-    "firebase": "^4.12.1 || ^5.0.0"
+    "firebase": "^3.0.0 || ^4.0.0 || ^5.0.0"
   },
   "scripts": {
-    "build-prod": "webpack",
+    "build": "webpack",
     "test": "jest",
     "test-watch": "jest --watch"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm test",
+      "pre-push": "npm test"
+    }
   },
   "jest": {
     "setupTestFrameworkScriptFile": "<rootDir>test/setup/setupEnzyme.js",
@@ -47,7 +54,11 @@
     "react-redux",
     "babel",
     "hoc",
+    "higher-order-component",
     "fire-connect"
+  ],
+  "files": [
+    "build/"
   ],
   "author": "Robert Rinaldo",
   "license": "MIT",

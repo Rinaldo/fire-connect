@@ -3,11 +3,11 @@
 import React from 'react'
 // import renderer from 'react-test-renderer'
 import { shallow } from 'enzyme'
-import { render } from 'react-testing-library'
+import { fireEvent, render } from 'react-testing-library'
 
 import 'jest-dom/extend-expect'
 
-import { Provider, firestoreConnect, firebaseConnect } from '../src'
+import { Provider, firestoreConnect, firebaseConnect, authConnect } from '../src'
 // import { FireProvider } from '../app/fire-connect/provider'
 
 jest.useFakeTimers()
@@ -21,6 +21,7 @@ const ToBeConnected = props => (
     <p>Receives arbitrary props from context: {props.arbitraryProp}</p>
     <p>Receives the user prop: {props.user ? props.user.uid : 'no user yet'}</p>
     <p>Receives props passed to it: {props.passingIn}</p>
+    <button onClick={props.click}>Click Me!</button>
   </div>
 )
 
@@ -146,8 +147,10 @@ describe('Basic Firestore Integration', () => {
 describe('Basic Firebase Integration', () => {
 
   const firebaseMessage = { message: 'Hello from Firebase!' }
+  const someData = { data: true }
   let mockUnsubscribe
   let mockCb
+  let mockSet
   let tree
 
   const firebaseStub = {
@@ -159,6 +162,9 @@ describe('Basic Firebase Integration', () => {
         },
         off() {
           mockUnsubscribe()
+        },
+        set(data) {
+          mockSet(data)
         }
       }
     }
@@ -168,11 +174,16 @@ describe('Basic Firebase Integration', () => {
   describe('single listener', () => {
     const listenerStub = (connector, ref) =>
       ref('/some/path').on('value', mockCb)
-    const FakeConnected = firebaseConnect(listenerStub)(ToBeConnected)
+    // fireEvent doesn't seem to work so we can't test dispatchers
+    const dispatcherStub = (connector, ref) => ({
+      click() { ref().set(someData) }
+    })
+    const FakeConnected = firebaseConnect(listenerStub, dispatcherStub)(ToBeConnected)
 
     beforeEach(() => {
       mockUnsubscribe = jest.fn()
       mockCb = jest.fn()
+      mockSet = jest.fn()
       tree = render(
         <Provider auth={authStub} database={firebaseStub} arbitraryProp="arbitrary">
           <FakeConnected passingIn="Hi There!" />
@@ -231,4 +242,46 @@ describe('Basic Firebase Integration', () => {
       expect(mockUnsubscribe.mock.calls.length).toBe(3)
     })
   })
+})
+
+
+describe('Basic Auth Integration', () => {
+
+  let tree
+
+  const dispatcherStub = (connector, auth) => ({
+    onClick() { console.log('in onClick');auth.someAuthMethod() }
+  })
+  // fireEvent doesn't seem to work so we can't test dispatchers
+  const FakeConnected = authConnect(dispatcherStub)(ToBeConnected)
+
+  beforeEach(() => {
+    authStub.someAuthMethod = jest.fn()
+    tree = render(
+      <Provider auth={authStub} arbitraryProp="arbitrary">
+        <FakeConnected passingIn="Hi There!" />
+      </Provider>
+    )
+  })
+  afterEach(() => {
+    jest.clearAllTimers()
+  })
+  test('connected component receives props from context', () => {
+    fireEvent.click(tree.getByText('Click Me!'))
+    expect(tree.getByText(/^Receives arbitrary props from context:/).textContent).toBe('Receives arbitrary props from context: arbitrary')
+  })
+  test('connected component receives the user prop when it is loaded', () => {
+    fireEvent.click(tree.getByText('Click Me!'))
+    expect(tree.getByText(/^Receives the user prop:/).textContent).toBe('Receives the user prop: no user yet')
+    jest.runOnlyPendingTimers()
+    expect(tree.getByText(/^Receives the user prop:/).textContent).toBe('Receives the user prop: 123')
+  })
+  test('connected component receives props passed to it', () => {
+    fireEvent.click(tree.getByText('Click Me!'))
+    expect(tree.getByText(/^Receives props passed to it:/).textContent).toBe('Receives props passed to it: Hi There!')
+  })
+  // test('connected component receives dispatchers properly', () => {
+  //   fireEvent.click(tree.getByText('Click Me!'))
+  //   expect(authStub.someAuthMethod.mock.calls.length).toBe(1)
+  // })
 })
