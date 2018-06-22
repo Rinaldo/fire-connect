@@ -1,7 +1,6 @@
 import React from 'react'
 
 const fireContext = React.createContext()
-
 const addListenersErrorMessage = 'return value of addListeners must be either a function (for one listener) or object (for multiple listeners)'
 const multiListenerErrorMessage = 'The value of each key in the object returned from addListeners must be a function which takes no arguments and returns a listener'
 

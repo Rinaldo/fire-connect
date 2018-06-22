@@ -2,7 +2,7 @@
   "name": "fire-connect",
   "version": "1.0.0",
   "description": "React bindings for Firebase and Firestore",
-  "main": "src/index.js",
+  "main": "build/index.js",
   "devDependencies": {
     "@babel/core": "^7.0.0-beta.51",
     "@babel/preset-env": "^7.0.0-beta.51",
@@ -20,7 +20,6 @@
     "react-test-renderer": "^16.3.0",
     "react-testing-library": "^3.1.7",
     "regenerator-runtime": "^0.11.1",
-    "uglifyjs-webpack-plugin": "^1.2.5",
     "webpack": "^4.12.0",
     "webpack-cli": "^3.0.8"
   },

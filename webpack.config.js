@@ -1,14 +1,12 @@
 const path = require('path')
-const UglifyJSPlugin = require('uglifyjs-webpack-plugin')
 
 module.exports = {
   entry: './src/index.js',
   output: {
     path: path.join(__dirname, './build'),
-    filename: 'fire-connect.js'
+    filename: 'index.js'
   },
   mode: 'production',
-  plugins: [new UglifyJSPlugin({ sourceMap: true })],
   module: {
     rules: [
       {
