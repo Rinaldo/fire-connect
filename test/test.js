@@ -1,14 +1,13 @@
 /* global jest */
 
 import React from 'react'
-// import renderer from 'react-test-renderer'
 import { shallow } from 'enzyme'
 import { fireEvent, render } from 'react-testing-library'
 
 import 'jest-dom/extend-expect'
 
 import { Provider, firestoreConnect, firebaseConnect, authConnect } from '../src'
-// import { FireProvider } from '../app/fire-connect/provider'
+
 
 jest.useFakeTimers()
 
@@ -147,7 +146,6 @@ describe('Basic Firestore Integration', () => {
 describe('Basic Firebase Integration', () => {
 
   const firebaseMessage = { message: 'Hello from Firebase!' }
-  const someData = { data: true }
   let mockUnsubscribe
   let mockCb
   let mockSet
@@ -174,11 +172,7 @@ describe('Basic Firebase Integration', () => {
   describe('single listener', () => {
     const listenerStub = (connector, ref) =>
       ref('/some/path').on('value', mockCb)
-    // fireEvent doesn't seem to work so we can't test dispatchers
-    const dispatcherStub = (connector, ref) => ({
-      click() { ref().set(someData) }
-    })
-    const FakeConnected = firebaseConnect(listenerStub, dispatcherStub)(ToBeConnected)
+    const FakeConnected = firebaseConnect(listenerStub)(ToBeConnected)
 
     beforeEach(() => {
       mockUnsubscribe = jest.fn()
@@ -250,9 +244,8 @@ describe('Basic Auth Integration', () => {
   let tree
 
   const dispatcherStub = (connector, auth) => ({
-    onClick() { console.log('in onClick');auth.someAuthMethod() }
+    onClick() { auth.someAuthMethod() }
   })
-  // fireEvent doesn't seem to work so we can't test dispatchers
   const FakeConnected = authConnect(dispatcherStub)(ToBeConnected)
 
   beforeEach(() => {
@@ -280,8 +273,4 @@ describe('Basic Auth Integration', () => {
     fireEvent.click(tree.getByText('Click Me!'))
     expect(tree.getByText(/^Receives props passed to it:/).textContent).toBe('Receives props passed to it: Hi There!')
   })
-  // test('connected component receives dispatchers properly', () => {
-  //   fireEvent.click(tree.getByText('Click Me!'))
-  //   expect(authStub.someAuthMethod.mock.calls.length).toBe(1)
-  // })
 })
