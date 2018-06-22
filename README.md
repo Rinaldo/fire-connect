@@ -3,7 +3,7 @@ Fire Connect
 
 React bindings for Firebase and Firestore.
 
-Fire Connect aims to be a transparent, flexible set of higher order components to help separate Firebase-related concerns from the rest of your application. It  uses the standard Firebase and Firestore syntax, removing the need to learn a new custom syntax and allowing users to follow along with Google's [documentation](https://firebase.google.com/docs/).
+Fire Connect aims to be a transparent, flexible set of higher order components to help separate Firebase-related concerns from the rest of the application. It  uses the standard Firebase and Firestore syntax, removing the need to learn a new custom syntax and allowing users to follow along with Google's [documentation](https://firebase.google.com/docs/).
 
 ## Installation
 
@@ -27,7 +27,7 @@ When invoked, wraps the passed in component in a connector component and gives t
 const MyComponent = ({ task, isLoaded, newTask }) => (
   /* some JSX */
 )
-
+// single listener
 const addListeners = (connector, firestore) => (
   firestore.collection('tasks').doc('taskId').onSnapshot(doc => {
       connector.setState({ task: doc.data(), isLoaded: true })
@@ -36,9 +36,11 @@ const addListeners = (connector, firestore) => (
 const addDispatchers = (connector, firestore, user) = ({
   newTask(task) {
     firestore.collection('tasks').add({ ...task, authorId: user.uid })
+  },
+  deleteTask(taskId) {
+    firestore.collection('tasks').doc(taskId).delete()
   }
 })
-
 export default firestoreConnect(addListeners, addDispatchers)(MyComponent)
 ```
 ```js
@@ -59,9 +61,9 @@ const addListeners = (connector, firestore) => ({
 
 * [`addDispatchers(connector, firestore, user)`] Returns an object containing functions that send updates to Firestore, these functions are passed to the wrapped component as props.
 
-  * `connector` The `this` reference for the connector component. Can be used to access the connector's props (which includes everything passed to the provider) and call `setState`, among other things
-  * `firestore` The Firestore instance passed to the provider (`firebase.firestore()`)
-  * `user` If `firebase.auth()` was passed to the provider, it is the user object or null. Else, it is `undefined`
+  * [`connector`] The `this` reference for the connector component. Can be used to access the connector's props (which includes everything passed to the provider) and call `setState`, among other things
+  * [`firestore`] The Firestore instance passed to the provider (`firebase.firestore()`)
+  * [`user`] If `firebase.auth()` was passed to the provider, it is the user object or `null`. Else, it is `undefined`
 
 #### Returns
 
@@ -79,7 +81,7 @@ When invoked, wraps the passed in component in a connector component and gives t
 const MyComponent = ({ task, isLoaded, newTask }) => (
   /* some JSX */
 )
-
+// single listener
 const addListeners = (connector, ref) => (
   ref('tasks').onSnapshot('value', snapshot => {
       connector.setState({ task: snapshot.data(), isLoaded: true })
@@ -88,9 +90,11 @@ const addListeners = (connector, ref) => (
 const addDispatchers = (connector, ref, user) = ({
   newTask(task) {
     ref('tasks').push().set({ ...task, authorId: user.uid })
+  },
+  deleteTask(taskId) {
+    ref(`tasks/${taskId}`).remove()
   }
 })
-
 export default firebaseConnect(addListeners, addDispatchers)(MyComponent)
 ```
 ```js
@@ -112,10 +116,10 @@ const addListeners = (connector, ref, user, setEventType) => ({
 * [`addDispatchers(connector, ref, user)`] Returns an object containing functions that send updates to Firebase, these functions are passed to the wrapped component as props.
 
 
-  * `connector` The `this` reference for the connector component. Can be used to access the connector's props (which includes everything passed to the provider) and call `setState`, among other things
-  * `ref` An internal function that returns the result of calling `firebase.database().ref` and stores the path passed in for unsubscribing when the component unmounts.
-  * `user` If `firebase.auth()` was passed to the provider, it is the user object or null. Else, it is `undefined`
-  * `setEventType` By default, firebaseConnect will call `.off()` with no arguments, removing all listeners at the location `ref` was called with. If this behavior causes problems, the first argument to `.on` (eventType) can be replaced with `setEventType` invoked with a Firebase eventType. (See multiple listeners example above)
+  * [`connector`] The `this` reference for the connector component. Can be used to access the connector's props (which includes everything passed to the provider) and call `setState`, among other things
+  * [`ref`] An internal function that returns the result of calling `firebase.database().ref` and stores the path passed in for unsubscribing when the component unmounts.
+  * [`user`] If `firebase.auth()` was passed to the provider, it is the user object or `null`. Else, it is `undefined`
+  * [`setEventType`] By default, firebaseConnect will call `.off()` with no arguments, removing all listeners at the location `ref` was called with. If this behavior causes problems, the first argument to `.on` (eventType) can be replaced with `setEventType` invoked with a Firebase eventType. (See multiple listeners example above)
 
 #### Returns
 
@@ -144,7 +148,6 @@ const addHostDispatchers = (connector, auth) => ({
     auth.signOut()
   },
 })
-
 export default authConnect(addListeners, addDispatchers)(MyComponent)
 ```
 
@@ -152,9 +155,9 @@ export default authConnect(addListeners, addDispatchers)(MyComponent)
 
 * [`addDispatchers(connector, auth, user)`] Returns an object containing functions that invoke Auth methods, these functions are passed to the wrapped component as props.
 
-  * `connector` The `this` reference for the connector component. Can be used to access the connector's props (which includes everything passed to the provider) and call `setState`, among other things
-  * `auth` The Auth instance passed to the provider (`firebase.auth()`)
-  * `user` If `firebase.auth()` was passed to the provider, it is the user object or null. Else, it is `undefined`
+  * [`connector`] The `this` reference for the connector component. Can be used to access the connector's props (which includes everything passed to the provider) and call `setState`, among other things
+  * [`auth`] The Auth instance passed to the provider (`firebase.auth()`)
+  * [`user`] If `firebase.auth()` was passed to the provider, it is the user object or `null`. Else, it is `undefined`
 
 #### Returns
 
@@ -162,15 +165,15 @@ A React component class that can be invoked with a component and will pass dispa
 
 ### `<Provider auth database firestore (anyOtherProps)>`
 
-The `<Provider>` component wraps your application and uses the context API to pass auth, database, and Firestore references to connected components, as well as any other data the connected components should have. If passed an auth prop, it will initialize an auth listener and pass connected components the resulting user object.
+The `<Provider>` component wraps the application and uses the context API to pass auth, database, and Firestore references to connected components, as well as any other data the connected components should have. If passed an auth prop, it will initialize an auth listener and pass connected components the resulting user object.
 
 #### Props
 
-* `auth` `firebase.auth()`.
-* `database` `firebase.database()`.
-* `firestore` `firebase.firestore()`.
-* `children` (*ReactElement*): The root of your component hierarchy.
-* `onIdTokenChanged` Boolean prop that toggles whether the auth listener is `onIdTokenChanged` or the default `onAuthStateChanged`.
+* [`auth`] `firebase.auth()`
+* [`database`] `firebase.database()`
+* [`firestore`] `firebase.firestore()`
+* [`children`] (*ReactElement*): The root of the component hierarchy.
+* [`onIdTokenChanged`] Boolean prop that toggles whether the auth listener is `onIdTokenChanged` or the default `onAuthStateChanged`.
 * Any other props passed to `<Provider>` will be put in its context and accessible to connected components.
 
 #### Example
